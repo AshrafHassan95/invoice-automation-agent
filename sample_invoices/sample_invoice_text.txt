@@ -1,0 +1,37 @@
+ACME Corporation
+123 Business Street
+New York, NY 10001
+Tel: (555) 123-4567
+Tax ID: 12-3456789
+
+INVOICE
+
+Invoice Number: INV-2024-0042
+Invoice Date: 01/15/2024
+Due Date: 02/14/2024
+Payment Terms: NET30
+
+Bill To:
+Global Industries Inc.
+456 Corporate Ave
+Los Angeles, CA 90210
+
+Purchase Order: PO-2024-001
+
+Description                          Qty    Unit Price    Amount
+---------------------------------------------------------------
+Office Supplies - Premium Pack        10      $45.00      $450.00
+Printer Paper - A4 500 sheets         50      $25.00    $1,250.00
+Toner Cartridges - Black              5      $120.00      $600.00
+USB Flash Drives - 32GB              20       $15.00      $300.00
+
+                                     Subtotal:          $2,600.00
+                                     Tax (8%):            $208.00
+                                     --------------------------------
+                                     TOTAL DUE:         $2,808.00
+
+Payment Methods:
+- Bank Transfer: Account #1234567890
+- Check payable to: ACME Corporation
+
+Thank you for your business!
