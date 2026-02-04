@@ -35,6 +35,7 @@ env/
 .idea/
 *.swp
 *.swo
+.claude/
 
 # Data files - exclude all data to prevent pushing to GitHub
 data/
