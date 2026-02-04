@@ -6,7 +6,9 @@
       "Bash(python:*)",
       "Bash(C:\\\\invoice-automation-agent\\\\venv\\\\Scripts\\\\pip.exe install:*)",
       "Bash(./venv/Scripts/pip.exe install:*)",
-      "Bash(del \"C:\\\\invoice-automation-agent\\\\demo.py\")"
+      "Bash(del \"C:\\\\invoice-automation-agent\\\\demo.py\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove sample and test files for production readiness\n\n- Delete sample_invoices directory and sample invoice text file\n- Delete tests directory with test_agents.py\n- Update .gitignore to fully exclude data/ directory from version control\n- Add additional database file patterns \\(.sqlite, .sqlite3\\) to .gitignore\n- Remove obsolete sample_invoices patterns from .gitignore\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

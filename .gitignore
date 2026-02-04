@@ -36,14 +36,12 @@ env/
 *.swp
 *.swo
 
-# Data files
-data/uploads/*
-data/processed/*
-data/output/*
-!data/uploads/.gitkeep
-!data/processed/.gitkeep
-!data/output/.gitkeep
+# Data files - exclude all data to prevent pushing to GitHub
+data/
+!data/.gitkeep
 *.db
+*.sqlite
+*.sqlite3
 
 # Logs
 *.log
@@ -60,12 +58,6 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
-
-# Uploaded files (keep directory structure)
-sample_invoices/*.pdf
-sample_invoices/*.png
-sample_invoices/*.jpg
-!sample_invoices/sample_invoice_text.txt
 
 # OS
 .DS_Store
