@@ -78,8 +78,11 @@ invoice-automation-agent/
 ├── docs/
 │   ├── process_documentation.md   # Business process documentation
 │   └── technical_specs.md         # Technical specifications
-├── sample_invoices/               # Test documents
-├── demo.py                        # Demo script
+├── data/                          # Runtime data (excluded from Git)
+│   ├── uploads/                   # Uploaded invoice files
+│   ├── processed/                 # Processed documents
+│   └── output/                    # Processing results
+├── run.py                         # Application entry point
 ├── requirements.txt
 └── README.md
 ```
@@ -104,40 +107,35 @@ venv\Scripts\activate  # Windows
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Configure environment (optional)
+cp .env.example .env
+# Edit .env with your API keys if using LLM features
 ```
 
-### Run Demo (No files needed)
+### Run Application
 ```bash
-python demo.py
-```
-
-### Run Web Application
-```bash
-uvicorn src.api.main:app --reload
+python run.py
 ```
 Then open http://localhost:8000
 
 ---
 
-## Demo Walkthrough
+## Application Usage
 
-### Console Demo
-```bash
-python demo.py --sample
-```
-
-Output shows:
-1. Invoice data being processed
-2. Validation agent checking business rules
-3. Routing agent determining approval path
-4. Agent reasoning (Chain-of-Thought)
-
-### Web Demo
-1. Start the server: `uvicorn src.api.main:app --reload`
+### Web Interface
+1. Start the server: `python run.py`
 2. Open http://localhost:8000
 3. Drag and drop an invoice (PDF/PNG/JPG)
 4. Watch real-time agent processing
 5. View extracted data and routing decision
+
+### Processing Flow
+1. **Upload**: Drag and drop invoice document
+2. **Extraction**: Agent extracts data using IDP
+3. **Validation**: Business rules verification
+4. **Routing**: Automatic approval path determination
+5. **Results**: View extracted data, validation status, and routing decision
 
 ---
 
@@ -214,20 +212,31 @@ This project demonstrates capabilities aligned with the Automation & AI Speciali
 
 ---
 
+## Production Readiness
+
+This codebase is structured for production deployment:
+- ✅ Clean directory structure
+- ✅ Environment variable configuration
+- ✅ Data directory excluded from version control
+- ✅ Modular agent architecture
+- ✅ API-first design with FastAPI
+- ✅ Async processing support
+
 ## Future Enhancements
 
 ### Production-Ready Features
 - [ ] Azure Document Intelligence integration
 - [ ] Database persistence (PostgreSQL)
-- [ ] User authentication
-- [ ] Email notifications
+- [ ] User authentication & authorization
+- [ ] Email notifications & webhooks
 - [ ] Power Automate connector
+- [ ] Audit logging & compliance tracking
 
 ### Advanced AI Features
 - [ ] LLM-powered extraction (GPT-4)
-- [ ] Anomaly detection
-- [ ] Smart categorization
-- [ ] Predictive routing
+- [ ] Anomaly detection & fraud prevention
+- [ ] Smart categorization & learning
+- [ ] Predictive routing based on historical data
 
 ---
 
