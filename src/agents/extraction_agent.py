@@ -231,18 +231,11 @@ Always aim for high confidence extraction. If confidence is low, consider altern
             )
 
         try:
-            # Step 1: Analyze document
-            self.record_thought(
-                observation=f"Received document: {document_path}",
-                reasoning="First, I need to analyze the document to determine the best extraction approach",
-                action="analyze_document",
-                action_input={"document_path": document_path}
-            )
+            # Quick inline document analysis (no tool call overhead)
+            from pathlib import Path
+            path = Path(document_path)
 
-            analysis = await self.execute_tool("analyze_document", document_path=document_path)
-            tools_used.append("analyze_document")
-
-            if not analysis["file_exists"]:
+            if not path.exists():
                 return AgentResponse(
                     success=False,
                     result=None,
@@ -252,13 +245,13 @@ Always aim for high confidence extraction. If confidence is low, consider altern
                     error="Document file not found"
                 )
 
-            # Step 2: Choose and execute extraction method
-            extraction_method = analysis["recommended_method"]
+            suffix = path.suffix.lower()
+            extraction_method = "parser" if suffix == ".pdf" else "ocr"
 
+            # Record single thought for extraction
             self.record_thought(
-                observation=f"Document analysis: {analysis}",
-                reasoning=f"Document is {'a PDF' if analysis['is_pdf'] else 'an image'}. "
-                          f"Will use {extraction_method} method for extraction.",
+                observation=f"Processing {suffix} document",
+                reasoning=f"Using {extraction_method} method for {'PDF text' if suffix == '.pdf' else 'image'} extraction",
                 action=f"extract_with_{extraction_method}",
                 action_input={"document_path": document_path}
             )
@@ -281,14 +274,7 @@ Always aim for high confidence extraction. If confidence is low, consider altern
                 extraction = await self.execute_tool("extract_with_ocr", document_path=document_path)
                 tools_used.append("extract_with_ocr")
 
-            # Step 3: Parse invoice fields
-            self.record_thought(
-                observation=f"Extracted {len(extraction['raw_text'])} characters of text",
-                reasoning="Now I'll parse the raw text into structured invoice fields",
-                action="parse_invoice_fields",
-                action_input={"raw_text": "...text content..."}
-            )
-
+            # Parse and validate in sequence with minimal thought overhead
             parsed = await self.execute_tool("parse_invoice_fields", raw_text=extraction["raw_text"])
             tools_used.append("parse_invoice_fields")
 
@@ -302,14 +288,6 @@ Always aim for high confidence extraction. If confidence is low, consider altern
                     error="Failed to parse invoice fields from extracted text"
                 )
 
-            # Step 4: Validate extraction
-            self.record_thought(
-                observation=f"Parsed invoice data with confidence: {parsed['confidence']:.2f}",
-                reasoning="Need to validate the extraction quality before proceeding",
-                action="validate_extraction",
-                action_input={"invoice_data": "...", "confidence": parsed["confidence"]}
-            )
-
             validation = await self.execute_tool(
                 "validate_extraction",
                 invoice_data=parsed["invoice_data"],
@@ -317,10 +295,10 @@ Always aim for high confidence extraction. If confidence is low, consider altern
             )
             tools_used.append("validate_extraction")
 
-            # Final thought
+            # Single final thought summarizing results
             self.record_thought(
-                observation=f"Validation result: {validation}",
-                reasoning="Extraction complete. Returning results.",
+                observation=f"Extracted and validated invoice data (confidence: {parsed['confidence']:.2f})",
+                reasoning=f"Extraction {'successful' if validation['is_valid'] else 'completed with issues'}",
                 action="return_result",
                 action_input={}
             )

@@ -359,13 +359,28 @@ class RoutingAgent(BaseAgent):
                                        sla_deadline: str = None,
                                        priority: str = "normal") -> Dict[str, Any]:
         """Create final approval request."""
+        # Determine approval reason based on level
+        amount = invoice_data.get("total_amount", 0)
+        if approval_level == "auto_approved":
+            reason = f"Auto-approved: Amount ${amount:,.2f} within threshold"
+        elif approval_level == "manager":
+            reason = f"Manager approval required for ${amount:,.2f}"
+        elif approval_level == "director":
+            reason = f"Director approval required for ${amount:,.2f}"
+        elif approval_level == "executive":
+            reason = f"Executive approval required for ${amount:,.2f}"
+        else:
+            reason = f"Manual review required for ${amount:,.2f}"
+
         return {
             "request_id": f"APR-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "invoice_id": invoice_data.get("invoice_id", "UNKNOWN"),  # Added required field
             "invoice_number": invoice_data.get("invoice_number"),
             "vendor_name": invoice_data.get("vendor_name"),
             "amount": invoice_data.get("total_amount"),
             "currency": invoice_data.get("currency", "USD"),
             "approval_level": approval_level,
+            "reason": reason,  # Added required field
             "assigned_to": approver,
             "priority": priority,
             "sla_deadline": sla_deadline,

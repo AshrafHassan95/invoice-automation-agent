@@ -66,12 +66,12 @@ class DocumentProcessor:
         return {
             # Invoice number patterns
             "invoice_number": re.compile(
-                r"(?:invoice\s*(?:#|no\.?|number)?:?\s*)([A-Z0-9][-A-Z0-9]{2,20})",
+                r"(?:invoice\s*(?:#|no\.?|number)\s*:?\s*)([A-Z0-9][-A-Z0-9]{2,20})",
                 re.IGNORECASE
             ),
             # Date patterns (various formats)
             "date": re.compile(
-                r"(?:date:?\s*)(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|"
+                r"(?:date(?:\s+of\s+issue)?:?\s*)(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|"
                 r"\w+\s+\d{1,2},?\s+\d{4})",
                 re.IGNORECASE
             ),
@@ -98,7 +98,7 @@ class DocumentProcessor:
             ),
             # Vendor/Company name (at start of document)
             "vendor_name": re.compile(
-                r"^([A-Z][A-Za-z\s&]+(?:Inc\.?|LLC|Ltd\.?|Corp\.?|Corporation|Company|Co\.?))",
+                r"^([A-Z][A-Za-z\s&,]+(?:Inc\.?|LLC|LLP|Ltd\.?|Corp\.?|Corporation|Company|Co\.?|PBC|L\.?L\.?C\.?|P\.?L\.?C\.?))",
                 re.MULTILINE
             ),
             # Currency
@@ -285,6 +285,36 @@ class DocumentProcessor:
                 errors=[f"Scanned PDF processing error: {str(e)}"]
             )
 
+    def _normalize_text(self, text: str) -> str:
+        """
+        Normalize text extracted from PDFs that have character spacing issues.
+
+        Some PDFs extract with spaces between every character.
+        This method attempts to fix that while preserving legitimate spaces.
+        """
+        # Check if text has the characteristic spacing issue
+        # (spaces between most characters)
+        space_ratio = text.count(' ') / max(len(text), 1)
+
+        if space_ratio > 0.3:  # More than 30% spaces suggests spacing issue
+            # Strategy: In spaced text, multiple spaces indicate word boundaries
+            # Single spaces are character separators
+            import re
+
+            # Replace 2+ spaces with a placeholder to preserve word boundaries
+            WORD_BOUNDARY = "<<<SPACE>>>"
+            normalized = re.sub(r'\s{2,}', WORD_BOUNDARY, text)
+
+            # Remove all remaining single spaces (character separators)
+            normalized = normalized.replace(' ', '')
+
+            # Restore word boundaries as single spaces
+            normalized = normalized.replace(WORD_BOUNDARY, ' ')
+
+            return normalized.strip()
+
+        return text
+
     def _extract_invoice_fields(self, text: str) -> Tuple[Optional[InvoiceData], float]:
         """
         Extract invoice fields from raw text using pattern matching.
@@ -294,11 +324,29 @@ class DocumentProcessor:
         if not text.strip():
             return None, 0.0
 
+        # Normalize text to handle character spacing issues
+        text = self._normalize_text(text)
+
         extracted = {}
         confidence_scores = []
 
-        # Extract each field
-        for field_name, pattern in self._patterns.items():
+        # Prioritize required fields for faster extraction
+        required_fields = ["invoice_number", "date", "amount", "vendor_name"]
+        optional_fields = [f for f in self._patterns.keys() if f not in required_fields]
+
+        # Extract required fields first
+        for field_name in required_fields:
+            pattern = self._patterns[field_name]
+            match = pattern.search(text)
+            if match:
+                extracted[field_name] = match.group(1).strip()
+                confidence_scores.append(1.0)
+            else:
+                confidence_scores.append(0.0)
+
+        # Extract optional fields
+        for field_name in optional_fields:
+            pattern = self._patterns[field_name]
             match = pattern.search(text)
             if match:
                 extracted[field_name] = match.group(1).strip()

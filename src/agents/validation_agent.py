@@ -550,10 +550,13 @@ Flag any issues and determine if invoice can proceed or needs exception handling
             return AgentResponse(
                 success=overall_status != ValidationStatus.FAILED,
                 result={
+                    "invoice_id": invoice_data.get("invoice_id", "UNKNOWN"),  # Added required field
                     "overall_status": overall_status.value,
                     "validation_results": [r.model_dump() for r in validation_results],
                     "exceptions": [e.value for e in exceptions],
-                    "can_auto_process": overall_status == ValidationStatus.PASSED
+                    "can_auto_process": overall_status == ValidationStatus.PASSED,
+                    "validated_at": datetime.now().isoformat(),
+                    "validated_by": "validation_agent"
                 },
                 thoughts=self.thought_history,
                 tools_used=tools_used,

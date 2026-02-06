@@ -169,7 +169,7 @@ class AgentOrchestrator:
         """Register an agent with the orchestrator."""
         self.agents[agent.role] = agent
 
-    async def process_invoice(self, document_path: str) -> Dict[str, Any]:
+    async def process_invoice(self, document_path: str, invoice_id: str = None) -> Dict[str, Any]:
         """
         Main workflow: Process an invoice through the agent pipeline.
 
@@ -182,6 +182,7 @@ class AgentOrchestrator:
         result = {
             "success": False,
             "document_path": document_path,
+            "invoice_id": invoice_id or "UNKNOWN",
             "stages": [],
             "final_result": None,
             "errors": []
@@ -205,7 +206,13 @@ class AgentOrchestrator:
                     result["errors"].append(f"Extraction failed: {extraction_result.error}")
                     return result
 
-                invoice_data = extraction_result.result
+                # Extract just the invoice_data from the result
+                extraction_data = extraction_result.result
+                invoice_data = extraction_data.get("invoice_data") if isinstance(extraction_data, dict) else extraction_data
+
+                # Inject invoice_id into invoice_data for downstream agents
+                if isinstance(invoice_data, dict):
+                    invoice_data["invoice_id"] = result["invoice_id"]
 
             # Stage 2: Validation
             if AgentRole.VALIDATOR in self.agents:

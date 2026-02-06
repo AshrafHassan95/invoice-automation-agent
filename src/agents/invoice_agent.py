@@ -63,11 +63,23 @@ class InvoiceProcessingAgent:
     └─────────────────────────────────────────────────────────┘
     """
 
-    def __init__(self):
+    def __init__(self, use_database: bool = True):
         self.orchestrator = AgentOrchestrator()
         self.metrics = ProcessingMetrics()
         self._setup_agents()
         self.processing_history: list = []
+        self.use_database = use_database
+
+        # Initialize database if enabled
+        self.db = None
+        if self.use_database:
+            try:
+                from ..database.invoice_db import get_database
+                self.db = get_database()
+                print("Database persistence enabled")
+            except Exception as e:
+                print(f"Database initialization failed: {e}")
+                self.db = None
 
     def _setup_agents(self):
         """Initialize and register all specialized agents."""
@@ -104,7 +116,7 @@ class InvoiceProcessingAgent:
 
         try:
             # Execute the orchestrated workflow
-            result = await self.orchestrator.process_invoice(document_path)
+            result = await self.orchestrator.process_invoice(document_path, invoice_id)
 
             # Extract results from each stage
             extraction_result = None
@@ -151,12 +163,23 @@ class InvoiceProcessingAgent:
             )
 
             # Store in history
-            self.processing_history.append({
+            record = {
                 "invoice_id": invoice_id,
                 "document_path": document_path,
                 "result": processing_result.model_dump(),
                 "timestamp": datetime.now().isoformat()
-            })
+            }
+            self.processing_history.append(record)
+
+            # Save to database if enabled
+            if self.db:
+                try:
+                    result_dict = processing_result.model_dump()
+                    result_dict["document_path"] = document_path
+                    result_dict["timestamp"] = datetime.now().isoformat()
+                    self.db.save_invoice(result_dict)
+                except Exception as e:
+                    print(f"Failed to save to database: {e}")
 
             # Print summary
             self._print_summary(processing_result, routing_result)
@@ -241,9 +264,9 @@ class InvoiceProcessingAgent:
 
     def _print_summary(self, result: ProcessingResult, routing_result: Optional[Dict]):
         """Print processing summary."""
-        print(f"\n{'─'*60}")
+        print(f"\n{'-'*60}")
         print("PROCESSING SUMMARY")
-        print(f"{'─'*60}")
+        print(f"{'-'*60}")
         print(f"Invoice ID: {result.invoice_id}")
         print(f"Status: {result.status.value.upper()}")
         print(f"Success: {'Yes' if result.success else 'No'}")
@@ -268,7 +291,7 @@ class InvoiceProcessingAgent:
             print(f"\nErrors: {', '.join(result.errors)}")
 
         print(f"\nAgent Actions: {len(result.agent_actions)} steps")
-        print(f"{'─'*60}\n")
+        print(f"{'-'*60}\n")
 
     def get_metrics(self) -> Dict[str, Any]:
         """Get current processing metrics."""
